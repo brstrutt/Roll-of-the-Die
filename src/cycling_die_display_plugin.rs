@@ -19,10 +19,9 @@ fn animate_sprite(
     mut query: Query<(
         &mut AnimationTimer,
         &mut TextureAtlasSprite,
-        &Handle<TextureAtlas>,
     )>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
+    for (mut timer, mut sprite) in query.iter_mut() {
         timer.tick(time.delta());
         if timer.just_finished() {
             sprite.index = ((sprite.index) % 6) + 1;
@@ -41,7 +40,7 @@ fn draw_die_face(
 
     commands.spawn_bundle(SpriteSheetBundle {
         texture_atlas: texture_atlas_handle,
-        transform: Transform::from_scale(Vec3::splat(2.0)),
+        transform: Transform::from_scale(Vec3::splat(2.0)).with_translation(Vec3::new(-20.0, -200.0, 0.0)),
         ..default()
     })
     .insert(AnimationTimer(Timer::from_seconds(0.5, true)));

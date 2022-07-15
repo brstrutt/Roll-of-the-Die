@@ -1,5 +1,8 @@
 use bevy::{prelude::*, log::LogPlugin};
 
+mod hello_plugin;
+mod blue_rect_plugin;
+
 fn main() {
     // When building for WASM, print panics to the browser console
     #[cfg(target_arch = "wasm32")]
@@ -12,57 +15,20 @@ fn main() {
 
     App::new()
         .add_plugins_with(DefaultPlugins, |group| group.disable::<LogPlugin>())
-        .add_plugin(HelloPlugin)
-        .add_startup_system(setup)
+        .add_startup_system(setup_2d_display)
+        //.add_plugin(hello_plugin::HelloPlugin)
+        //.add_plugin(blue_rect_plugin::BlueRectPlugin)
+        .add_startup_system(draw_die_face)
         .run();
 }
 
-fn setup(mut commands: Commands) {
-    log::info!("doop");
+fn setup_2d_display(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+}
+
+fn draw_die_face(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_bundle(SpriteBundle {
-        sprite: Sprite {
-            color: Color::rgb(0.25, 0.25, 0.75),
-            custom_size: Some(Vec2::new(50.0, 50.0)),
-            ..default()
-        },
+        texture: asset_server.load("resources/spritesheet.png"),
         ..default()
     });
-}
-
-#[derive(Component)]
-struct Person;
-
-#[derive(Component)]
-struct Name(String);
-
-fn add_people(mut commands: Commands) {
-    commands.spawn().insert(Person).insert(Name("Elaina Proctor".to_string()));
-    commands.spawn().insert(Person).insert(Name("Renzo Hume".to_string()));
-    commands.spawn().insert(Person).insert(Name("Vanessa Belakor".to_string()));
-}
-
-struct GreetTimer(Timer);
-
-fn greet_people(
-    time: Res<Time>,
-    mut timer: ResMut<GreetTimer>,
-    query: Query<&Name, With<Person>>
-) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for name in query.iter() {
-            log::info!("hello {}!", name.0);
-        }
-    }
-}
-
-pub struct HelloPlugin;
-
-impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut App) {
-        app
-            .insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
-            .add_startup_system(add_people)
-            .add_system(greet_people);
-    }
 }

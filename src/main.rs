@@ -2,8 +2,14 @@ use yew::prelude::*;
 
 #[function_component(App)]
 fn app() -> Html {
+    let canvas_ref = NodeRef::default();
+
     html! {
-        <h1>{ "Hello World!" }</h1>
+        <canvas
+            ref={canvas_ref}
+            width={1280}
+            height={720}
+        />
     }
 }
 

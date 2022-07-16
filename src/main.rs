@@ -14,12 +14,11 @@ fn main() {
     let logger_config = wasm_logger::Config::new(log::Level::Info);
 
     wasm_logger::init(logger_config);
-    log::debug!("App is starting");
+    log::info!("App is starting");
 
     App::new()
         .add_plugins_with(DefaultPlugins, |group| group.disable::<LogPlugin>())
         .add_startup_system(setup_2d_display)
-        .add_plugin(cycling_die_display_plugin::CyclingDieDisplayPlugin)
         .add_plugin(die_plugin::DiePlugin)
         .run();
 }

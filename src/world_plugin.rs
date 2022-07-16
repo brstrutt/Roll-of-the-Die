@@ -84,7 +84,7 @@ fn setup(
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 enum TileType {
     Wall,
     Floor,

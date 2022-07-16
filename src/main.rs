@@ -6,6 +6,7 @@ use bevy::{
 mod die_plugin;
 mod sub_spritesheet;
 mod world_plugin;
+mod direction;
 
 fn main() {
     // When building for WASM, print panics to the browser console

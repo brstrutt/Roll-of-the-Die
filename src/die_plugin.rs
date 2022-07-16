@@ -31,12 +31,15 @@ fn setup(
 }
 
 const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const DIE_COLOR: Color = Color::rgb(0.5, 0.1, 0.1);
 const DIE_SPEED: f32 = 100.0;
 
 #[derive(Component)]
-struct Die {
+struct Die;
+
+#[derive(Component)]
+struct SubSpritesheet {
     spritesheet_indices: Vec<usize>,
+    current_index: usize,
 }
 
 
@@ -45,6 +48,7 @@ struct DieBundle {
     die: Die,
     #[bundle]
     sprite_bundle: SpriteSheetBundle,
+    sub_spritesheet: SubSpritesheet,
 }
 
 impl DieBundle {
@@ -52,7 +56,7 @@ impl DieBundle {
         let spritesheet_indices: Vec<usize> = vec![1,2,3,4,5,6];
         let initial_index = spritesheet_indices[0];
         DieBundle { 
-            die: Die { spritesheet_indices },
+            die: Die,
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle,
                 transform: Transform {
@@ -66,15 +70,27 @@ impl DieBundle {
                 },
                 ..default()
             },
+            sub_spritesheet: SubSpritesheet{ spritesheet_indices, current_index: 0 },
         }
     }
 }
 
 fn move_die(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Transform, With<Die>>,
+    mut transform_query: Query<
+        &mut Transform,
+        With<Die>>,
+    mut sprite_query: Query<
+        &mut TextureAtlasSprite,
+        With<Die>>,
+    mut sub_spritesheet_query: Query<
+        &mut SubSpritesheet,
+        With<Die>>,
 ) {
-    let mut die_transform = query.single_mut();
+    let mut transform = transform_query.single_mut();
+    let mut sprite = sprite_query.single_mut();
+    let mut sub_spritesheet = sub_spritesheet_query.single_mut();
+
     let mut direction = Vec3::splat(0.0);
 
     if keyboard_input.pressed(KeyCode::Left) {
@@ -93,5 +109,12 @@ fn move_die(
         direction[1] += 1.0;
     }
 
-    die_transform.translation = die_transform.translation + (direction * Vec3::splat(DIE_SPEED) * Vec3::splat(super::TIME_STEP));
+    transform.translation = transform.translation + (direction * Vec3::splat(DIE_SPEED) * Vec3::splat(super::TIME_STEP));
+
+    if direction != Vec3::splat(0.0) {
+        let next_sprite_index = (sub_spritesheet.current_index + 1) % sub_spritesheet.spritesheet_indices.len();
+        sprite.index = sub_spritesheet.spritesheet_indices[next_sprite_index];
+        sub_spritesheet.current_index = next_sprite_index;
+    }
+
 }

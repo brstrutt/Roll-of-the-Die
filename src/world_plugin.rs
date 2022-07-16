@@ -48,7 +48,7 @@ fn setup(
                     .spawn()
                     .insert(Tile)
                     .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate(false)),
+                    .insert(PressurePlate{ activated: false, number: 2}),
                 TileType::Wall => commands
                     .spawn()
                     .insert(Tile)
@@ -72,7 +72,7 @@ struct Tile;
 fn get_sprite_index(tile_type: &TileType) -> usize {
     match tile_type {
         TileType::Floor => return 28,
-        TileType::PressurePlate => return 31,
+        TileType::PressurePlate => return 30,
         TileType::Wall => return 47,
     }
 }

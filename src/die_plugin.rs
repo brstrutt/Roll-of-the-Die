@@ -39,7 +39,7 @@ fn setup(
 struct MovementCooldown(Timer);
 
 #[derive(Component)]
-struct Die;
+struct Die(usize);
 
 #[derive(Bundle)]
 struct DieBundle {
@@ -56,7 +56,7 @@ impl DieBundle {
         let spritesheet_indices: Vec<usize> = vec![1,2,3,4,5,6];
         let initial_index = spritesheet_indices[0];
         DieBundle { 
-            die: Die,
+            die: Die(1),
             collider: Collider,
             movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
             sprite_bundle: SpriteSheetBundle {
@@ -72,7 +72,7 @@ impl DieBundle {
                 },
                 ..default()
             },
-            sub_spritesheet: SubSpritesheet{ spritesheet_indices, current_index: 0 },
+            sub_spritesheet: SubSpritesheet{ spritesheet_indices },
         }
     }
 }
@@ -80,9 +80,7 @@ impl DieBundle {
 fn move_die(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut die_query: Query<
-        (&mut Transform, &mut TextureAtlasSprite, &mut SubSpritesheet, &mut MovementCooldown),
-        With<Die>>,
+    mut die_query: Query<(&mut Transform, &mut TextureAtlasSprite, &mut SubSpritesheet, &mut MovementCooldown, &mut Die)>,
     colliders_query: Query<
         & Transform,
         (With<Collider>,Without<Die>),
@@ -95,8 +93,9 @@ fn move_die(
     let (
         mut transform,
         mut sprite,
-        mut sub_spritesheet,
-        mut movement_cooldown) = die_query.single_mut();
+        sub_spritesheet,
+        mut movement_cooldown,
+        mut die,) = die_query.single_mut();
     
     movement_cooldown.tick(time.delta());
     if movement_cooldown.finished() {
@@ -118,14 +117,22 @@ fn move_die(
         transform.translation = new_position;
 
         if direction != Vec3::splat(0.0) {
-            sprite.index = sub_spritesheet.next_sprite_index();
+            die.0 = (die.0 % 6) + 1;
+            sprite.index = sub_spritesheet.get_sprite_index(die.0 - 1);
             movement_cooldown.reset();
         }
 
         for (mut pressure_plate, mut texture_atlas_sprite, pp_transform) in pressure_plates_query.iter_mut() {
-            if is_colliding(new_position, pp_transform.translation) && !pressure_plate.0 {
-                texture_atlas_sprite.index -= 7;
-                pressure_plate.0 = true;
+            if is_colliding(new_position, pp_transform.translation) && 
+                !pressure_plate.activated {
+                if die.0 == pressure_plate.number {
+                    texture_atlas_sprite.index -= 7;
+                    pressure_plate.activated = true;
+                    sprite.index = sub_spritesheet.get_sprite_index(die.0 - 1) + 14;
+                }
+                else {
+                    sprite.index = sub_spritesheet.get_sprite_index(die.0 - 1) + 7;
+                }
             }
         }
     }

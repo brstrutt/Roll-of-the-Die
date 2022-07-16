@@ -42,7 +42,10 @@ fn load_spritesheet(
 struct Collider;
 
 #[derive(Component)]
-struct PressurePlate(bool);
+struct PressurePlate{
+    activated: bool,
+    number: usize,
+}
 
 // Globals
 pub const PIXEL_SCALE: f32 = 4.0;

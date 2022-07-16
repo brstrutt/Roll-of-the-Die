@@ -6,7 +6,7 @@ use bevy::{
     core::FixedTimestep,
 };
 
-use crate::{Collider, GRID_SIZE};
+use crate::{Collider, GRID_SIZE, PressurePlate};
 
 use super::sub_spritesheet::SubSpritesheet;
 
@@ -80,28 +80,26 @@ impl DieBundle {
 fn move_die(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut transform_query: Query<
-        &mut Transform,
-        With<Die>>,
-    mut sprite_query: Query<
-        &mut TextureAtlasSprite,
-        With<Die>>,
-    mut sub_spritesheet_query: Query<
-        &mut SubSpritesheet,
-        With<Die>>,
-    mut movement_cooldown_query: Query<
-        &mut MovementCooldown,
+    mut die_query: Query<
+        (&mut Transform, &mut TextureAtlasSprite, &mut SubSpritesheet, &mut MovementCooldown),
         With<Die>>,
     colliders_query: Query<
         & Transform,
         (With<Collider>,Without<Die>),
     >,
+    mut pressure_plates_query: Query<
+        (&mut PressurePlate, &mut TextureAtlasSprite, &Transform),
+        (Without<Die>, Without<Collider>),
+    >,
 ) {
-    let mut movement_cooldown = movement_cooldown_query.single_mut();
+    let (
+        mut transform,
+        mut sprite,
+        mut sub_spritesheet,
+        mut movement_cooldown) = die_query.single_mut();
     
     movement_cooldown.tick(time.delta());
     if movement_cooldown.finished() {
-        let mut transform = transform_query.single_mut();
         let mut direction = Vec3::splat(0.0);
 
         if keyboard_input.pressed(KeyCode::Left) { direction[0] -= 1.0; }
@@ -120,11 +118,15 @@ fn move_die(
         transform.translation = new_position;
 
         if direction != Vec3::splat(0.0) {
-            let mut sprite = sprite_query.single_mut();
-            let mut sub_spritesheet = sub_spritesheet_query.single_mut();
-
             sprite.index = sub_spritesheet.next_sprite_index();
             movement_cooldown.reset();
+        }
+
+        for (mut pressure_plate, mut texture_atlas_sprite, pp_transform) in pressure_plates_query.iter_mut() {
+            if is_colliding(new_position, pp_transform.translation) && !pressure_plate.0 {
+                texture_atlas_sprite.index -= 7;
+                pressure_plate.0 = true;
+            }
         }
     }
 }

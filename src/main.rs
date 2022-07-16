@@ -41,6 +41,9 @@ fn load_spritesheet(
 #[derive(Component)]
 struct Collider;
 
+#[derive(Component)]
+struct PressurePlate(bool);
+
 // Globals
 pub const PIXEL_SCALE: f32 = 4.0;
 pub const GRID_PIXEL_COUNT: f32 = 11.0;

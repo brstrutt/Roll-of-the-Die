@@ -13,8 +13,7 @@ impl Plugin for DiePlugin {
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(FixedTimestep::step(super::TIME_STEP as f64))
-                    .with_system(tick_movement_timer)
-                    .with_system(move_die),
+                    .with_system(move_die)
             );
     }
 }
@@ -22,7 +21,7 @@ impl Plugin for DiePlugin {
 const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
 const DIE_EDGE_LEN_PIX: f32 = 11.0;
 const DIE_EDGE_LEN: f32 = DIE_EDGE_LEN_PIX * super::PIXEL_SCALE;
-const MOVEMENT_TICK: f32 = 0.5;
+const MOVEMENT_COOLDOWN: f32 = 0.5;
 
 fn setup(
     mut commands: Commands,
@@ -37,7 +36,7 @@ fn setup(
 }
 
 #[derive(Component, Deref, DerefMut)]
-struct MovementTimer(Timer);
+struct MovementCooldown(Timer);
 
 #[derive(Component)]
 struct Die;
@@ -48,11 +47,18 @@ struct SubSpritesheet {
     current_index: usize,
 }
 
+impl SubSpritesheet {
+    fn next_sprite_index(&mut self) -> usize {
+        self.current_index = (self.current_index + 1) % self.spritesheet_indices.len();
+        return self.spritesheet_indices[self.current_index];
+    }
+}
+
 
 #[derive(Bundle)]
 struct DieBundle {
     die: Die,
-    movement_timer: MovementTimer,
+    movement_cooldown: MovementCooldown,
     #[bundle]
     sprite_bundle: SpriteSheetBundle,
     sub_spritesheet: SubSpritesheet,
@@ -64,7 +70,7 @@ impl DieBundle {
         let initial_index = spritesheet_indices[0];
         DieBundle { 
             die: Die,
-            movement_timer: MovementTimer(Timer::from_seconds(MOVEMENT_TICK, true)),
+            movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle,
                 transform: Transform {
@@ -84,6 +90,7 @@ impl DieBundle {
 }
 
 fn move_die(
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut transform_query: Query<
         &mut Transform,
@@ -94,56 +101,29 @@ fn move_die(
     mut sub_spritesheet_query: Query<
         &mut SubSpritesheet,
         With<Die>>,
-    mut movement_timer_query: Query<
-        &mut MovementTimer,
+    mut movement_cooldown_query: Query<
+        &mut MovementCooldown,
         With<Die>>,
 ) {
     let mut transform = transform_query.single_mut();
     let mut sprite = sprite_query.single_mut();
     let mut sub_spritesheet = sub_spritesheet_query.single_mut();
-    let mut movement_timer = movement_timer_query.single_mut();
+    let mut movement_cooldown = movement_cooldown_query.single_mut();
     
-    if movement_timer.paused() {
+    movement_cooldown.tick(time.delta());
+    if movement_cooldown.finished() {
         let mut direction = Vec3::splat(0.0);
 
-        if keyboard_input.pressed(KeyCode::Left) {
-            direction[0] -= 1.0;
-        }
-    
-        if keyboard_input.pressed(KeyCode::Right) {
-            direction[0] += 1.0;
-        }
-    
-        if keyboard_input.pressed(KeyCode::Down) {
-            direction[1] -= 1.0;
-        }
-    
-        if keyboard_input.pressed(KeyCode::Up) {
-            direction[1] += 1.0;
-        }
+        if keyboard_input.pressed(KeyCode::Left) { direction[0] -= 1.0; }
+        if keyboard_input.pressed(KeyCode::Right) { direction[0] += 1.0; }
+        if keyboard_input.pressed(KeyCode::Down) { direction[1] -= 1.0;}
+        if keyboard_input.pressed(KeyCode::Up) { direction[1] += 1.0; }
     
         transform.translation = transform.translation + (direction * Vec3::splat(DIE_EDGE_LEN));
     
         if direction != Vec3::splat(0.0) {
-            let next_sprite_index = (sub_spritesheet.current_index + 1) % sub_spritesheet.spritesheet_indices.len();
-            sprite.index = sub_spritesheet.spritesheet_indices[next_sprite_index];
-            sub_spritesheet.current_index = next_sprite_index;
-            movement_timer.unpause();
-        }
-    }
-}
-
-fn tick_movement_timer(
-    time: Res<Time>,
-    mut movement_timer_query: Query<
-        &mut MovementTimer,
-        With<Die>>,
-) {
-    let mut movement_timer = movement_timer_query.single_mut();
-    if !movement_timer.paused() {
-        movement_timer.tick(time.delta());
-        if movement_timer.just_finished() { 
-            movement_timer.pause();
+            sprite.index = sub_spritesheet.next_sprite_index();
+            movement_cooldown.reset();
         }
     }
 }

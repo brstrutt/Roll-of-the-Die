@@ -8,7 +8,6 @@ use bevy::{
 
 use crate::{Collider, GRID_SIZE, PressurePlate};
 
-use super::sub_spritesheet::SubSpritesheet;
 use super::direction::{
     *,
     Direction};
@@ -41,6 +40,17 @@ fn setup(
 #[derive(Component, Deref, DerefMut)]
 struct MovementCooldown(Timer);
 
+#[derive(Component, Deref, DerefMut)]
+struct AnimationFrameTimer(Timer);
+
+#[derive(PartialEq)]
+enum DieAnimation {
+    None,
+    Frame1,
+    Frame2,
+    Frame3,
+}
+
 #[derive(Component)]
 struct Die {
     face_number: usize,
@@ -49,6 +59,10 @@ struct Die {
     bottom_number: usize,
     left_number: usize,
     hidden_number: usize,
+    animation_state: DieAnimation,
+    animation_direction: Direction,
+    animation_timer: AnimationFrameTimer,
+    destination_translation: Vec3,
 }
 
 #[derive(Bundle)]
@@ -58,13 +72,10 @@ struct DieBundle {
     movement_cooldown: MovementCooldown,
     #[bundle]
     sprite_bundle: SpriteSheetBundle,
-    sub_spritesheet: SubSpritesheet,
 }
 
 impl DieBundle {
     fn new(texture_atlas_handle: Handle<TextureAtlas>) -> DieBundle {
-        let spritesheet_indices: Vec<usize> = vec![1,2,3,4,5,6];
-        let initial_index = spritesheet_indices[0];
         DieBundle { 
             die: Die { 
                 face_number: 1,
@@ -73,6 +84,10 @@ impl DieBundle {
                 bottom_number: 5,
                 left_number: 4,
                 hidden_number: 6,
+                animation_state: DieAnimation::None,
+                animation_direction: Direction::Up,
+                animation_timer: AnimationFrameTimer(Timer::from_seconds(MOVEMENT_COOLDOWN/4.0, false)),
+                destination_translation: DIE_STARTING_POSITION,
             },
             collider: Collider,
             movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
@@ -84,12 +99,11 @@ impl DieBundle {
                     ..default()
                 },
                 sprite: TextureAtlasSprite {
-                    index: initial_index,
+                    index: get_die_face_sprite_index(1),
                     ..default()
                 },
                 ..default()
             },
-            sub_spritesheet: SubSpritesheet{ spritesheet_indices },
         }
     }
 }
@@ -98,7 +112,7 @@ impl DieBundle {
 fn move_die(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut die_query: Query<(&mut Transform, &mut TextureAtlasSprite, &mut SubSpritesheet, &mut MovementCooldown, &mut Die)>,
+    mut die_query: Query<(&mut Transform, &mut TextureAtlasSprite, &mut MovementCooldown, &mut Die)>,
     colliders_query: Query<
         & Transform,
         (With<Collider>,Without<Die>),
@@ -111,10 +125,57 @@ fn move_die(
     let (
         mut transform,
         mut sprite,
-        sub_spritesheet,
         mut movement_cooldown,
         mut die,) = die_query.single_mut();
     
+    let dist_to_dest = die.destination_translation - transform.translation;
+    if die.animation_state != DieAnimation::None {
+        die.animation_timer.tick(time.delta());
+        if die.animation_timer.finished() {
+            match die.animation_state {
+                DieAnimation::Frame1 => {
+                    die.animation_state = DieAnimation::Frame2;
+                    die.animation_timer.reset();
+                    transform.translation += dist_to_dest / 3.0;
+                },
+                DieAnimation::Frame2 => {
+                    die.animation_state = DieAnimation::Frame3;
+                    die.animation_timer.reset();
+                    transform.translation += dist_to_dest / 2.0;
+                },
+                DieAnimation::Frame3 => {
+                    die.animation_state = DieAnimation::None;
+                    die.animation_timer.reset();
+                    transform.translation = die.destination_translation;
+                },
+                DieAnimation::None => die.animation_state = DieAnimation::None,
+            }
+        }
+
+        match die.animation_state {
+            DieAnimation::Frame1 => sprite.index = get_die_animation_frame_index(1, die.animation_direction),
+            DieAnimation::Frame2 => sprite.index = get_die_animation_frame_index(2, die.animation_direction),
+            DieAnimation::Frame3 => sprite.index = get_die_animation_frame_index(3, die.animation_direction),
+            DieAnimation::None => sprite.index = get_die_face_sprite_index(die.face_number),
+        }
+    }
+    else
+    {
+        for (mut pressure_plate, mut texture_atlas_sprite, pp_transform) in pressure_plates_query.iter_mut() {
+            if is_colliding(transform.translation, pp_transform.translation) && 
+                !pressure_plate.activated {
+                if die.face_number == pressure_plate.number {
+                    texture_atlas_sprite.index -= 7;
+                    pressure_plate.activated = true;
+                    sprite.index = get_die_face_sprite_index(die.face_number) + 14;
+                }
+                else {
+                    sprite.index = get_die_face_sprite_index(die.face_number) + 7;
+                }
+            }
+        }
+    }
+
     movement_cooldown.tick(time.delta());
     if movement_cooldown.finished() {
         let direction = keypress_to_direction(keyboard_input);
@@ -129,25 +190,14 @@ fn move_die(
             }
         }
 
-        transform.translation = new_position;
+        die.destination_translation = new_position;
+        transform.translation += dist_to_dest / 4.0;
 
         rotate_die(&mut die, &direction);
-        sprite.index = sub_spritesheet.get_sprite_index(die.face_number - 1);
+        sprite.index = get_die_face_sprite_index(die.face_number);
         movement_cooldown.reset();
-
-        for (mut pressure_plate, mut texture_atlas_sprite, pp_transform) in pressure_plates_query.iter_mut() {
-            if is_colliding(new_position, pp_transform.translation) && 
-                !pressure_plate.activated {
-                if die.face_number == pressure_plate.number {
-                    texture_atlas_sprite.index -= 7;
-                    pressure_plate.activated = true;
-                    sprite.index = sub_spritesheet.get_sprite_index(die.face_number - 1) + 14;
-                }
-                else {
-                    sprite.index = sub_spritesheet.get_sprite_index(die.face_number - 1) + 7;
-                }
-            }
-        }
+        die.animation_state = DieAnimation::Frame1;
+        die.animation_direction = direction.clone();
     }
 }
 
@@ -187,4 +237,28 @@ fn rotate_die(die: &mut Die, rotation: &Direction) {
             die.left_number = old_face_number;
         },
     };
+}
+
+fn get_die_animation_frame_index(frame_num: usize, movement_direction: Direction) -> usize {
+    let frames: [usize; 3];
+    match movement_direction {
+        Direction::Up => frames = [52,53,54],
+        Direction::Down => frames = [54,53,52], 
+        Direction::Right => frames = [49,50,51], 
+        Direction::Left => frames = [51,50,49],   
+    }
+
+    return frames[frame_num - 1];
+}
+
+fn get_die_face_sprite_index(face_num: usize) -> usize {
+    match face_num {
+        1 => return 1,
+        2 => return 2,
+        3 => return 3,
+        4 => return 4,
+        5 => return 5,
+        6 => return 6,
+        _ => return 0,
+    }
 }

@@ -4,7 +4,6 @@ use bevy::{
 };
 
 mod die_plugin;
-mod sub_spritesheet;
 mod world_plugin;
 mod direction;
 
@@ -35,7 +34,7 @@ fn load_spritesheet(
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
 ) -> Handle<TextureAtlas> {
     let texture_handle = asset_server.load("resources/spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(GRID_PIXEL_COUNT), 7, 7);
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(GRID_PIXEL_COUNT), 7, 8);
     return texture_atlases.add(texture_atlas);
 }
 

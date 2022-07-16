@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+#[derive(Clone, Copy)]
 pub enum Direction {
     Up,
     Down,

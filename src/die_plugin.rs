@@ -4,6 +4,8 @@ use bevy::{
     core::FixedTimestep,
 };
 
+use super::sub_spritesheet::SubSpritesheet;
+
 pub struct DiePlugin;
 
 impl Plugin for DiePlugin {
@@ -19,20 +21,14 @@ impl Plugin for DiePlugin {
 }
 
 const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const DIE_EDGE_LEN_PIX: f32 = 11.0;
-const DIE_EDGE_LEN: f32 = DIE_EDGE_LEN_PIX * super::PIXEL_SCALE;
 const MOVEMENT_COOLDOWN: f32 = 0.5;
 
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    let texture_handle = asset_server.load("resources/spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(DIE_EDGE_LEN_PIX), 7, 5);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-
-    commands.spawn_bundle(DieBundle::new(texture_atlas_handle));
+    commands.spawn_bundle(DieBundle::new(crate::load_spritesheet(&asset_server, &mut texture_atlases)));
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -40,20 +36,6 @@ struct MovementCooldown(Timer);
 
 #[derive(Component)]
 struct Die;
-
-#[derive(Component)]
-struct SubSpritesheet {
-    spritesheet_indices: Vec<usize>,
-    current_index: usize,
-}
-
-impl SubSpritesheet {
-    fn next_sprite_index(&mut self) -> usize {
-        self.current_index = (self.current_index + 1) % self.spritesheet_indices.len();
-        return self.spritesheet_indices[self.current_index];
-    }
-}
-
 
 #[derive(Bundle)]
 struct DieBundle {
@@ -119,7 +101,7 @@ fn move_die(
         if keyboard_input.pressed(KeyCode::Down) { direction[1] -= 1.0;}
         if keyboard_input.pressed(KeyCode::Up) { direction[1] += 1.0; }
     
-        transform.translation = transform.translation + (direction * Vec3::splat(DIE_EDGE_LEN));
+        transform.translation = transform.translation + (direction * Vec3::splat(super::GRID_SIZE));
     
         if direction != Vec3::splat(0.0) {
             sprite.index = sub_spritesheet.next_sprite_index();

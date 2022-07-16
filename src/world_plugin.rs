@@ -20,9 +20,11 @@ fn setup(
         for y in 0 .. WORLD_SIZE {
             let position = Vec3::new((x as f32 - WORLD_CENTRE as f32)  * GRID_SIZE, (y as f32 - WORLD_CENTRE as f32) * GRID_SIZE, 0.5);
 
+            let tile_type = WORLD[x][y];
+            
             commands
                 .spawn()
-                .insert(Tile { type_of: TileType::Floor})
+                .insert(Tile { type_of: tile_type.clone()})
                 .insert_bundle(SpriteSheetBundle {
                     texture_atlas: spritesheet.clone(),
                     transform: Transform {
@@ -31,7 +33,7 @@ fn setup(
                         ..default()
                     },
                     sprite: TextureAtlasSprite {
-                        index: 28,
+                        index: get_sprite_index(&tile_type),
                         ..default()
                     },
                     ..default()
@@ -40,6 +42,7 @@ fn setup(
     }
 }
 
+#[derive(Clone, Copy)]
 enum TileType {
     Wall,
     Floor,
@@ -50,5 +53,29 @@ struct Tile {
     type_of: TileType,
 }
 
+fn get_sprite_index(tile_type: &TileType) -> usize {
+    match tile_type {
+        TileType::Wall => return 47,
+        TileType::Floor => return 28,
+    }
+}
+
 const WORLD_SIZE: usize = 14;
 const WORLD_CENTRE: usize = WORLD_SIZE / 2;
+
+const WORLD: [[TileType; WORLD_SIZE]; WORLD_SIZE] = [
+    [TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Floor, TileType::Wall],
+    [TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall, TileType::Wall],
+];

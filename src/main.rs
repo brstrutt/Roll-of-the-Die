@@ -38,6 +38,9 @@ fn load_spritesheet(
     return texture_atlases.add(texture_atlas);
 }
 
+#[derive(Component)]
+struct Collider;
+
 // Globals
 pub const PIXEL_SCALE: f32 = 4.0;
 pub const GRID_PIXEL_COUNT: f32 = 11.0;

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::GRID_SIZE;
+use crate::{GRID_SIZE, Collider};
 
 
 pub struct WorldPlugin;
@@ -18,45 +18,64 @@ fn setup(
     let spritesheet = crate::load_spritesheet(&asset_server, &mut texture_atlases);
     for x in 0 .. WORLD_SIZE {
         for y in 0 .. WORLD_SIZE {
-            let position = Vec3::new((x as f32 - WORLD_CENTRE as f32)  * GRID_SIZE, (y as f32 - WORLD_CENTRE as f32) * GRID_SIZE, 0.5);
-
             let tile_type = WORLD[x][y];
-            
-            commands
-                .spawn()
-                .insert(Tile { type_of: tile_type.clone()})
-                .insert_bundle(SpriteSheetBundle {
-                    texture_atlas: spritesheet.clone(),
-                    transform: Transform {
-                        translation: position,
-                        scale: Vec3::splat(super::PIXEL_SCALE),
-                        ..default()
-                    },
-                    sprite: TextureAtlasSprite {
-                        index: get_sprite_index(&tile_type),
-                        ..default()
-                    },
+
+            let position = Vec3::new(
+                (x as f32 - WORLD_CENTRE as f32)  * GRID_SIZE, 
+                (y as f32 - WORLD_CENTRE as f32) * GRID_SIZE, 
+                get_tile_height(&tile_type));
+
+            let sprite_sheet_bundle = SpriteSheetBundle {
+                texture_atlas: spritesheet.clone(),
+                transform: Transform {
+                    translation: position,
+                    scale: Vec3::splat(super::PIXEL_SCALE),
                     ..default()
-                });
+                },
+                sprite: TextureAtlasSprite {
+                    index: get_sprite_index(&tile_type),
+                    ..default()
+                },
+                ..default()
+            };
+            
+            if tile_type == TileType::Wall {
+                commands
+                    .spawn()
+                    .insert(Tile)
+                    .insert_bundle(sprite_sheet_bundle)
+                    .insert(Collider);
+            }
+            else {
+                commands
+                    .spawn()
+                    .insert(Tile)
+                    .insert_bundle(sprite_sheet_bundle);
+            }
         }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum TileType {
     Wall,
     Floor,
 }
 
 #[derive(Component)]
-struct Tile {
-    type_of: TileType,
-}
+struct Tile;
 
 fn get_sprite_index(tile_type: &TileType) -> usize {
     match tile_type {
-        TileType::Wall => return 47,
         TileType::Floor => return 28,
+        TileType::Wall => return 47,
+    }
+}
+
+fn get_tile_height(tile_type: &TileType) -> f32 {
+    match tile_type {
+        TileType::Floor => return 0.5,
+        TileType::Wall => return 1.0,
     }
 }
 

@@ -1,8 +1,12 @@
+use std::ops::Sub;
+
 use bevy::{
     prelude::*,
     math::const_vec3,
     core::FixedTimestep,
 };
+
+use crate::{Collider, GRID_SIZE};
 
 use super::sub_spritesheet::SubSpritesheet;
 
@@ -40,6 +44,7 @@ struct Die;
 #[derive(Bundle)]
 struct DieBundle {
     die: Die,
+    collider: Collider,
     movement_cooldown: MovementCooldown,
     #[bundle]
     sprite_bundle: SpriteSheetBundle,
@@ -52,6 +57,7 @@ impl DieBundle {
         let initial_index = spritesheet_indices[0];
         DieBundle { 
             die: Die,
+            collider: Collider,
             movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
             sprite_bundle: SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle,
@@ -86,14 +92,16 @@ fn move_die(
     mut movement_cooldown_query: Query<
         &mut MovementCooldown,
         With<Die>>,
+    colliders_query: Query<
+        & Transform,
+        (With<Collider>,Without<Die>),
+    >,
 ) {
-    let mut transform = transform_query.single_mut();
-    let mut sprite = sprite_query.single_mut();
-    let mut sub_spritesheet = sub_spritesheet_query.single_mut();
     let mut movement_cooldown = movement_cooldown_query.single_mut();
     
     movement_cooldown.tick(time.delta());
     if movement_cooldown.finished() {
+        let mut transform = transform_query.single_mut();
         let mut direction = Vec3::splat(0.0);
 
         if keyboard_input.pressed(KeyCode::Left) { direction[0] -= 1.0; }
@@ -101,11 +109,27 @@ fn move_die(
         if keyboard_input.pressed(KeyCode::Down) { direction[1] -= 1.0;}
         if keyboard_input.pressed(KeyCode::Up) { direction[1] += 1.0; }
     
-        transform.translation = transform.translation + (direction * Vec3::splat(super::GRID_SIZE));
-    
+        let new_position = transform.translation + (direction * Vec3::splat(super::GRID_SIZE));
+
+        for collider in colliders_query.iter() {
+            if is_colliding(new_position, collider.translation) {
+                return;
+            }
+        }
+
+        transform.translation = new_position;
+
         if direction != Vec3::splat(0.0) {
+            let mut sprite = sprite_query.single_mut();
+            let mut sub_spritesheet = sub_spritesheet_query.single_mut();
+
             sprite.index = sub_spritesheet.next_sprite_index();
             movement_cooldown.reset();
         }
     }
+}
+
+fn is_colliding(object1_pos: Vec3, object2_pos: Vec3) -> bool {
+    let difference = object1_pos.sub(object2_pos);
+    return difference.length().abs() < GRID_SIZE; // Just do sphere collision detection because everything is squares
 }

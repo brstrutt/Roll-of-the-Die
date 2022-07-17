@@ -6,7 +6,7 @@ use bevy::{
     core::FixedTimestep,
 };
 
-use crate::{Collider, GRID_SIZE, PressurePlate};
+use crate::{Collider, GRID_SIZE, PressurePlate, Spritesheet};
 
 use super::direction::{
     *,
@@ -17,7 +17,7 @@ pub struct DiePlugin;
 impl Plugin for DiePlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system(setup)
+            .add_startup_system_to_stage(StartupStage::PostStartup, setup)
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(FixedTimestep::step(super::TIME_STEP as f64))
@@ -31,10 +31,9 @@ const MOVEMENT_COOLDOWN: f32 = 0.25;
 
 fn setup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    spritesheet: Res<Spritesheet>,
 ) {
-    commands.spawn_bundle(DieBundle::new(crate::load_spritesheet(&asset_server, &mut texture_atlases)));
+    commands.spawn_bundle(DieBundle::new(&spritesheet.0));
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -75,7 +74,7 @@ struct DieBundle {
 }
 
 impl DieBundle {
-    fn new(texture_atlas_handle: Handle<TextureAtlas>) -> DieBundle {
+    fn new(texture_atlas_handle: &Handle<TextureAtlas>) -> DieBundle {
         DieBundle { 
             die: Die { 
                 face_number: 1,
@@ -92,7 +91,7 @@ impl DieBundle {
             collider: Collider,
             movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
             sprite_bundle: SpriteSheetBundle {
-                texture_atlas: texture_atlas_handle,
+                texture_atlas: texture_atlas_handle.clone(),
                 transform: Transform {
                     translation: DIE_STARTING_POSITION,
                     scale: Vec3::splat(super::PIXEL_SCALE),

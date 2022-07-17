@@ -6,6 +6,7 @@ use bevy::{
 mod die_plugin;
 mod world_plugin;
 mod direction;
+mod controls_plugin;
 
 use direction::keypress_to_direction;
 use die_plugin::Die;
@@ -24,10 +25,11 @@ fn main() {
     App::new()
         .add_plugins_with(DefaultPlugins, |group| group.disable::<LogPlugin>())
         .add_state(GameState::MainMenu)
-        .add_startup_system(setup_2d_display)
+        .add_startup_system(setup)
         .add_startup_system(setup_main_menu)
         .add_plugin(world_plugin::WorldPlugin)
         .add_plugin(die_plugin::DiePlugin)
+        .add_plugin(controls_plugin::ControlsPlugin)
         .add_system_set(
             SystemSet::on_enter(GameState::MainMenu)
                 .with_system(show_main_menu),
@@ -51,9 +53,20 @@ fn main() {
         .run();
 }
 
-fn setup_2d_display(mut commands: Commands) {
+#[derive(Component)]
+struct Spritesheet(Handle<TextureAtlas>);
+
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
+
+    let texture_handle = asset_server.load("resources/spritesheet.png");
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(GRID_PIXEL_COUNT), 7, 10);
+    commands.insert_resource(Spritesheet(texture_atlases.add(texture_atlas)));
 }
 
 #[derive(Component)]
@@ -150,15 +163,6 @@ fn reset_game(
 
     die_transform.translation = DIE_STARTING_POSITION;
     die.destination_translation = DIE_STARTING_POSITION;
-}
-
-fn load_spritesheet(
-    asset_server: & Res<AssetServer>,
-    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
-) -> Handle<TextureAtlas> {
-    let texture_handle = asset_server.load("resources/spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(GRID_PIXEL_COUNT), 7, 8);
-    return texture_atlases.add(texture_atlas);
 }
 
 #[derive(Component)]

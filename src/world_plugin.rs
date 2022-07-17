@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{GRID_SIZE, Collider, PressurePlate};
+use crate::{GRID_SIZE, Collider, PressurePlate, Spritesheet};
 
 
 pub struct WorldPlugin;
@@ -7,17 +7,16 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system(setup)
+            .add_startup_system_to_stage(StartupStage::PostStartup, setup)
             .add_system(update_pressure_plate_appearence);
     }
 }
 
 fn setup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    spritesheet: Res<Spritesheet>,
 ) {
-    let spritesheet = crate::load_spritesheet(&asset_server, &mut texture_atlases);
+    let spritesheet = spritesheet.0.clone();
     for x in 0 .. WORLD_SIZE {
         for y in 0 .. WORLD_SIZE {
             let tile_type = WORLD[x][y];
@@ -152,7 +151,7 @@ fn get_tile_height(tile_type: &TileType) -> f32 {
     }
 }
 
-const WORLD_SIZE: usize = 14;
+pub const WORLD_SIZE: usize = 14;
 const WORLD_CENTRE: usize = WORLD_SIZE / 2;
 
 const WORLD: [[TileType; WORLD_SIZE]; WORLD_SIZE] = [

@@ -28,7 +28,7 @@ impl Plugin for DiePlugin {
 }
 
 pub const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE; // Don't change this if you want your die to stay on screen
+const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE / 2.0;
 
 fn setup(
     mut commands: Commands,
@@ -189,7 +189,13 @@ fn tick_motion(
 ) {
     let (mut die_transform, die) = die_query.single_mut();
 
-    let velocity = (translation_from_direction(&die.animation_direction) * GRID_SIZE) / (DIE_SPEED * time.delta().as_secs_f32());
+    let diff = (die.destination_translation * GRID_SIZE) - die_transform.translation;
+    let travel_direction = diff/diff.length().abs();
+
+    let mut velocity = (travel_direction * GRID_SIZE) / (DIE_SPEED * time.delta().as_secs_f32());
+    if velocity.length() > diff.length() {
+        velocity = velocity * diff.length()/velocity.length(); // Limit velocity so you cannot overshoot
+    }
     die_transform.translation += velocity;
     if die.animation_state == DieAnimation::None { 
         die_transform.translation = die.destination_translation * GRID_SIZE;

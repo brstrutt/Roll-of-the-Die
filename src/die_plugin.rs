@@ -23,12 +23,13 @@ impl Plugin for DiePlugin {
                     .with_system(react_to_input)
                     .with_system(tick_animation)
                     .with_system(tick_motion)
+                    .with_system(new_check_pressure_plates)
             );
     }
 }
 
 pub const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE / 2.0;
+const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE / 1.5; // SMaller is faster. Dunno why
 
 fn setup(
     mut commands: Commands,
@@ -128,14 +129,13 @@ fn react_to_input(
     die.animation_direction = direction.clone();
 }
 
-/*fn new_check_pressure_plates(
-    mut die_query: Query<(&mut Transform, &mut Die)>,
+fn new_check_pressure_plates(
+    mut die_query: Query<(&Transform, &Die, &mut TextureAtlasSprite)>,
     mut pressure_plates_query: Query<(&mut PressurePlate, &Transform)>
 ) {
-    let (die_transform, die) = die_query.single_mut();
+    let (die_transform, die, mut sprite) = die_query.single_mut();
     for (mut pressure_plate, pp_transform) in pressure_plates_query.iter_mut() {
-        if is_colliding(transform.translation, pp_transform.translation) && 
-            !pressure_plate.activated {
+        if is_colliding(die_transform.translation, pp_transform.translation) {
             if die.face_number == pressure_plate.number {
                 pressure_plate.activated = true;
                 sprite.index = get_die_face_sprite_index(die.face_number) + 14;
@@ -145,7 +145,7 @@ fn react_to_input(
             }
         }
     }
-}*/
+}
 
 fn tick_animation(
     mut die_query: Query<(& Transform, &mut TextureAtlasSprite, &mut Die)>,

@@ -52,14 +52,14 @@ enum DieAnimation {
 
 #[derive(Component)]
 pub struct Die {
-    face_number: usize,
-    top_number: usize,
-    right_number: usize,
-    bottom_number: usize,
-    left_number: usize,
-    hidden_number: usize,
+    pub face_number: usize,
+    pub top_number: usize,
+    pub right_number: usize,
+    pub bottom_number: usize,
+    pub left_number: usize,
+    pub hidden_number: usize,
     animation_state: DieAnimation,
-    animation_direction: Direction,
+    pub animation_direction: Direction,
     animation_timer: AnimationFrameTimer,
     pub destination_translation: Vec3,
 }
@@ -249,7 +249,7 @@ fn get_die_animation_frame_index(frame_num: usize, movement_direction: Direction
     return frames[frame_num - 1];
 }
 
-fn get_die_face_sprite_index(face_num: usize) -> usize {
+pub fn get_die_face_sprite_index(face_num: usize) -> usize {
     match face_num {
         1 => return 1,
         2 => return 2,

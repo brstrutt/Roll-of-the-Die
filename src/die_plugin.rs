@@ -28,7 +28,7 @@ impl Plugin for DiePlugin {
 }
 
 pub const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE / 1.5; // SMaller is faster. Dunno why
+const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE * 2.0; // SMaller is faster. Dunno why
 
 fn setup(
     mut commands: Commands,

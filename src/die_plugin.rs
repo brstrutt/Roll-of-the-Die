@@ -26,7 +26,7 @@ impl Plugin for DiePlugin {
     }
 }
 
-const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
+pub const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
 const MOVEMENT_COOLDOWN: f32 = 0.25;
 
 fn setup(
@@ -52,7 +52,7 @@ enum DieAnimation {
 }
 
 #[derive(Component)]
-struct Die {
+pub struct Die {
     face_number: usize,
     top_number: usize,
     right_number: usize,
@@ -62,7 +62,7 @@ struct Die {
     animation_state: DieAnimation,
     animation_direction: Direction,
     animation_timer: AnimationFrameTimer,
-    destination_translation: Vec3,
+    pub destination_translation: Vec3,
 }
 
 #[derive(Bundle)]
@@ -118,7 +118,7 @@ fn move_die(
         (With<Collider>,Without<Die>),
     >,
     mut pressure_plates_query: Query<
-        (&mut PressurePlate, &mut TextureAtlasSprite, &Transform),
+        (&mut PressurePlate, &Transform),
         (Without<Die>, Without<Collider>),
     >,
 ) {
@@ -161,11 +161,10 @@ fn move_die(
     }
     else
     {
-        for (mut pressure_plate, mut texture_atlas_sprite, pp_transform) in pressure_plates_query.iter_mut() {
+        for (mut pressure_plate, pp_transform) in pressure_plates_query.iter_mut() {
             if is_colliding(transform.translation, pp_transform.translation) && 
                 !pressure_plate.activated {
                 if die.face_number == pressure_plate.number {
-                    texture_atlas_sprite.index -= 7;
                     pressure_plate.activated = true;
                     sprite.index = get_die_face_sprite_index(die.face_number) + 14;
                 }

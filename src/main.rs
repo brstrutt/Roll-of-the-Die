@@ -8,6 +8,8 @@ mod world_plugin;
 mod direction;
 
 use direction::keypress_to_direction;
+use die_plugin::Die;
+use die_plugin::DIE_STARTING_POSITION;
 
 fn main() {
     // When building for WASM, print panics to the browser console
@@ -37,6 +39,14 @@ fn main() {
         .add_system_set(
             SystemSet::on_exit(GameState::MainMenu)
                 .with_system(hide_main_menu),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Playing)
+                .with_system(check_for_victory)
+        )
+        .add_system_set(
+            SystemSet::on_exit(GameState::Playing)
+                .with_system(reset_game)
         )
         .run();
 }
@@ -117,6 +127,31 @@ fn hide_main_menu(
     }
 }
 
+fn check_for_victory(
+    pressure_plates_query: Query<& PressurePlate>,
+    mut state: ResMut<State<GameState>>,
+) {
+    let mut all_plates_active = true;
+    for pressure_plate in pressure_plates_query.iter() {
+        all_plates_active = all_plates_active && pressure_plate.activated;
+    }
+
+    if all_plates_active {
+        let _ = state.overwrite_set(GameState::MainMenu);
+    }
+}
+
+fn reset_game(
+    mut pressure_plates_query: Query<&mut PressurePlate>,
+    mut die_query: Query<(&mut Transform, &mut Die)>,
+) {
+    for mut pressure_plate in pressure_plates_query.iter_mut() { pressure_plate.activated = false; }
+    let (mut die_transform, mut die) = die_query.single_mut();
+
+    die_transform.translation = DIE_STARTING_POSITION;
+    die.destination_translation = DIE_STARTING_POSITION;
+}
+
 fn load_spritesheet(
     asset_server: & Res<AssetServer>,
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
@@ -139,7 +174,6 @@ struct PressurePlate{
 enum GameState {
     MainMenu,
     Playing,
-    GameCompleted,
 }
 
 // Globals

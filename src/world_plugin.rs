@@ -6,7 +6,9 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
+        app
+            .add_startup_system(setup)
+            .add_system(update_pressure_plate_appearence);
     }
 }
 
@@ -81,6 +83,31 @@ fn setup(
                     .insert(Collider),
             };
         }
+    }
+}
+
+fn update_pressure_plate_appearence(
+    mut pressure_plates_query: Query<(& PressurePlate, &mut TextureAtlasSprite)>,
+) {
+    for (pressure_plate, mut texture_atlas_sprite) in pressure_plates_query.iter_mut() {
+        if pressure_plate.activated {
+            texture_atlas_sprite.index = get_pressure_plate_face_sprite_index(pressure_plate.number) - 7;
+        }
+        else {
+            texture_atlas_sprite.index = get_pressure_plate_face_sprite_index(pressure_plate.number);
+        }
+    }
+}
+
+fn get_pressure_plate_face_sprite_index(face_num: usize) -> usize {
+    match face_num {
+        1 => return 29,
+        2 => return 30,
+        3 => return 31,
+        4 => return 32,
+        5 => return 33,
+        6 => return 34,
+        _ => return 28,
     }
 }
 

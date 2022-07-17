@@ -78,7 +78,7 @@ fn update_main_menu(
     let direction = keypress_to_direction(keyboard_input);
 
     if direction.is_some() {
-        state.overwrite_set(GameState::Playing);
+        let _ = state.overwrite_set(GameState::Playing);
     }
 }
 

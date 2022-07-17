@@ -93,7 +93,7 @@ fn update(
     timer.0.tick(time.delta());
 
     if timer.0.finished() {
-        state.overwrite_set(GameState::MainMenu);
+        let _ = state.overwrite_set(GameState::MainMenu);
     }
 }
 

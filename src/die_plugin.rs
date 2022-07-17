@@ -101,13 +101,13 @@ impl DieBundle {
 
 fn react_to_input(
     keyboard_input: Res<Input<KeyCode>>,
-    mut die_query: Query<(&mut Transform, &mut TextureAtlasSprite, &mut Die)>,
+    mut die_query: Query<&mut Die>,
     colliders_query: Query<
         & Transform,
         (With<Collider>,Without<Die>),
     >
 ) {
-    let (die_transform, die_sprite, mut die) = die_query.single_mut();
+    let mut die = die_query.single_mut();
     if die.animation_state != DieAnimation::None { return; }
     
     let direction = keypress_to_direction(keyboard_input);
@@ -138,10 +138,10 @@ fn new_check_pressure_plates(
         if is_colliding(die_transform.translation, pp_transform.translation) {
             if die.face_number == pressure_plate.number {
                 pressure_plate.activated = true;
-                sprite.index = get_die_face_sprite_index(die.face_number) + 14;
+                if die.animation_state == DieAnimation::None { sprite.index = get_die_face_sprite_index(die.face_number) + 14};
             }
             else {
-                sprite.index = get_die_face_sprite_index(die.face_number) + 7;
+                if die.animation_state == DieAnimation::None { sprite.index = get_die_face_sprite_index(die.face_number) + 7};
             }
         }
     }
@@ -151,7 +151,7 @@ fn tick_animation(
     mut die_query: Query<(& Transform, &mut TextureAtlasSprite, &mut Die)>,
 ) {
     let (
-        mut transform,
+        transform,
         mut sprite,
         mut die) = die_query.single_mut();
     if die.animation_state == DieAnimation::None { return; }
@@ -205,7 +205,7 @@ fn tick_motion(
 
 fn is_colliding(object1_pos: Vec3, object2_pos: Vec3) -> bool {
     let difference = object1_pos.sub(object2_pos);
-    return difference.length().abs() < GRID_SIZE; // Just do sphere collision detection because everything is squares
+    return difference.length().abs() < GRID_SIZE / 2.0; // Just do sphere collision detection because everything is squares
 }
 
 fn rotate_die(die: &mut Die, rotation: &Direction) {

@@ -71,7 +71,7 @@ fn check_for_victory(
     }
 
     if all_plates_active {
-        state.overwrite_set(GameState::Finished);
+        let _ = state.overwrite_set(GameState::Finished);
     }
 }
 

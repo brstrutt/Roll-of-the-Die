@@ -3,7 +3,6 @@ use std::ops::Sub;
 use bevy::{
     prelude::*,
     math::const_vec3,
-    core::FixedTimestep,
 };
 
 use crate::{Collider, GRID_SIZE, PressurePlate, Spritesheet, GameState, PIXEL_SCALE};
@@ -135,7 +134,8 @@ fn new_check_pressure_plates(
 ) {
     let (die_transform, die, mut sprite) = die_query.single_mut();
     for (mut pressure_plate, pp_transform) in pressure_plates_query.iter_mut() {
-        if is_colliding(die_transform.translation, pp_transform.translation) {
+        if is_colliding(die_transform.translation, pp_transform.translation) &&
+        (die.animation_state == DieAnimation::None ||  die.animation_state == DieAnimation::Frame3) {
             if die.face_number == pressure_plate.number {
                 pressure_plate.activated = true;
                 if die.animation_state == DieAnimation::None { sprite.index = get_die_face_sprite_index(die.face_number) + 14};

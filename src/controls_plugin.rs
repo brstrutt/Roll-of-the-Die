@@ -17,7 +17,7 @@ impl Plugin for ControlsPlugin {
 struct ControlsDisplay(Direction);
 
 #[derive(Component)]
-struct AdjacentFacesDisplay(Direction);
+struct AdjacentFacesDisplay(Option<Direction>);
 
 fn setup(
     mut commands: Commands,
@@ -25,40 +25,48 @@ fn setup(
 ) {
     let display_centre = Vec3::new(-(WORLD_SIZE as f32 / 1.25 * GRID_SIZE), 0.0, 1.0);
 
-    for direction in [Direction::Down, Direction::Up, Direction::Left, Direction::Right] {
-        commands
-            .spawn()
-            .insert(ControlsDisplay(direction))
-            .insert_bundle(SpriteSheetBundle{
-                texture_atlas: spritesheet.0.clone(),
-                transform: Transform {
-                    translation: display_centre + get_direction_key_display_offset(direction) * GRID_SIZE,
-                    scale: Vec3::splat(super::PIXEL_SCALE),
-                    ..default()
-                },
-                sprite: TextureAtlasSprite {
-                    index: get_direction_key_sprite_index(direction),
-                    ..default()
-                },
-                ..default()
-            });
+    for direction in [
+        None,
+        Some(Direction::Down),
+        Some(Direction::Up),
+        Some(Direction::Left),
+        Some(Direction::Right)] {
+            if direction.is_some() {
+                let direction = direction.unwrap();
+                commands
+                    .spawn()
+                    .insert(ControlsDisplay(direction))
+                    .insert_bundle(SpriteSheetBundle{
+                        texture_atlas: spritesheet.0.clone(),
+                        transform: Transform {
+                            translation: display_centre + get_direction_key_display_offset(Some(direction)) * GRID_SIZE * 2.0,
+                            scale: Vec3::splat(super::PIXEL_SCALE),
+                            ..default()
+                        },
+                        sprite: TextureAtlasSprite {
+                            index: get_direction_key_sprite_index(direction),
+                            ..default()
+                        },
+                        ..default()
+                    });
+            }
 
-        commands
-            .spawn()
-            .insert(AdjacentFacesDisplay(direction))
-            .insert_bundle(SpriteSheetBundle{
-                texture_atlas: spritesheet.0.clone(),
-                transform: Transform {
-                    translation: display_centre + get_direction_key_display_offset(direction) * GRID_SIZE * 2.0,
-                    scale: Vec3::splat(super::PIXEL_SCALE),
+            commands
+                .spawn()
+                .insert(AdjacentFacesDisplay(direction))
+                .insert_bundle(SpriteSheetBundle{
+                    texture_atlas: spritesheet.0.clone(),
+                    transform: Transform {
+                        translation: display_centre + get_direction_key_display_offset(direction) * GRID_SIZE,
+                        scale: Vec3::splat(super::PIXEL_SCALE),
+                        ..default()
+                    },
+                    sprite: TextureAtlasSprite {
+                        index: 0,
+                        ..default()
+                    },
                     ..default()
-                },
-                sprite: TextureAtlasSprite {
-                    index: get_direction_key_sprite_index(direction),
-                    ..default()
-                },
-                ..default()
-            });
+                });
     }
     
 }
@@ -87,10 +95,11 @@ fn show_which_die_faces_are_adjacent(
     for (face_display, mut sprite) in adjacent_faces_display_query.iter_mut() {
         sprite.index = get_die_face_sprite_index(
             match face_display.0 {
-                Direction::Up => die.top_number,
-                Direction::Right => die.right_number,
-                Direction::Down => die.bottom_number,
-                Direction::Left => die.left_number,
+                Some(Direction::Up) => die.bottom_number,
+                Some(Direction::Right) => die.left_number,
+                Some(Direction::Down) => die.top_number,
+                Some(Direction::Left) => die.right_number,
+                None => die.face_number,
             });
     }
 }
@@ -104,11 +113,12 @@ fn get_direction_key_sprite_index(direction: Direction) -> usize {
     }
 }
 
-fn get_direction_key_display_offset(direction: Direction) -> Vec3 {
+fn get_direction_key_display_offset(direction: Option<Direction>) -> Vec3 {
     match direction {
-        Direction::Up => return Vec3::new(0.0, 1.0, 0.0),
-        Direction::Left => return Vec3::new(-1.0, 0.0, 0.0),
-        Direction::Right => return Vec3::new(1.0, 0.0, 0.0),
-        Direction::Down => return Vec3::new(0.0, -1.0, 0.0),
+        Some(Direction::Up) => return Vec3::new(0.0, -1.0, 0.0),
+        Some(Direction::Left) => return Vec3::new(1.0, 0.0, 0.0),
+        Some(Direction::Right) => return Vec3::new(-1.0, 0.0, 0.0),
+        Some(Direction::Down) => return Vec3::new(0.0, 1.0, 0.0),
+        None => return Vec3::splat(0.0),
     }
 }

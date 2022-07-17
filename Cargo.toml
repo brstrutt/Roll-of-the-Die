@@ -18,3 +18,7 @@ features = [
   "CanvasRenderingContext2d",
   "HtmlCanvasElement",
 ]
+
+[profile.release]
+lto = true
+opt-level = 's'

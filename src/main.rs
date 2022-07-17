@@ -7,8 +7,8 @@ mod die_plugin;
 mod world_plugin;
 mod direction;
 mod controls_plugin;
+mod title_screen_plugin;
 
-use direction::keypress_to_direction;
 use die_plugin::Die;
 use die_plugin::DIE_STARTING_POSITION;
 
@@ -26,22 +26,10 @@ fn main() {
         .add_plugins_with(DefaultPlugins, |group| group.disable::<LogPlugin>())
         .add_state(GameState::MainMenu)
         .add_startup_system(setup)
-        .add_startup_system(setup_main_menu)
+        .add_plugin(title_screen_plugin::TitleScreenPlugin)
         .add_plugin(world_plugin::WorldPlugin)
         .add_plugin(die_plugin::DiePlugin)
         .add_plugin(controls_plugin::ControlsPlugin)
-        .add_system_set(
-            SystemSet::on_enter(GameState::MainMenu)
-                .with_system(show_main_menu),
-        )
-        .add_system_set(
-            SystemSet::on_update(GameState::MainMenu)
-                .with_system(update_main_menu)
-        )
-        .add_system_set(
-            SystemSet::on_exit(GameState::MainMenu)
-                .with_system(hide_main_menu),
-        )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
                 .with_system(check_for_victory)
@@ -69,76 +57,6 @@ fn setup(
     commands.insert_resource(Spritesheet(texture_atlases.add(texture_atlas)));
 }
 
-#[derive(Component)]
-struct MenuUi;
-
-fn setup_main_menu(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
-    commands
-        .spawn_bundle(TextBundle {
-            style: Style {
-                align_self: AlignSelf::FlexEnd,
-                position_type: PositionType::Absolute,
-                position: Rect {
-                    bottom: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                },
-                ..default()
-            },
-            // Use the `Text::with_section` constructor
-            text: Text::with_section(
-                // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                "Roll the Die!",
-                TextStyle {
-                    font: asset_server.load("fonts/FreeSans.ttf"),
-                    font_size: 100.0,
-                    color: Color::WHITE,
-                },
-                // Note: You can use `Default::default()` in place of the `TextAlignment`
-                TextAlignment {
-                    horizontal: HorizontalAlign::Center,
-                    ..default()
-                },
-            ),
-            visibility: Visibility{ is_visible: true },
-            ..default()
-        })
-        .insert(MenuUi);
-}
-
-fn show_main_menu(
-    mut query: Query<
-        &mut Visibility,
-        With<MenuUi>>,
-) {
-    for mut visibility in query.iter_mut() {
-        visibility.is_visible = true;
-    }
-}
-
-fn update_main_menu(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut state: ResMut<State<GameState>>,
-) {
-    let direction = keypress_to_direction(keyboard_input);
-
-    if direction.is_some() {
-        let _ = state.overwrite_set(GameState::Playing);
-    }
-}
-
-fn hide_main_menu(
-    mut query: Query<
-        &mut Visibility,
-        With<MenuUi>>,
-) {
-    for mut visibility in query.iter_mut() {
-        visibility.is_visible = false;
-    }
-}
 
 fn check_for_victory(
     pressure_plates_query: Query<& PressurePlate>,

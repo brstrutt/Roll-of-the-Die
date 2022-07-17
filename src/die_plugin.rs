@@ -27,7 +27,7 @@ impl Plugin for DiePlugin {
 }
 
 const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
-const MOVEMENT_COOLDOWN: f32 = 0.5;
+const MOVEMENT_COOLDOWN: f32 = 0.25;
 
 fn setup(
     mut commands: Commands,

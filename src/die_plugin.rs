@@ -60,7 +60,7 @@ pub struct Die {
     animation_state: DieAnimation,
     pub animation_direction: Direction,
     animation_timer: AnimationFrameTimer,
-    pub destination_translation: Vec3,
+    pub destination_translation: Vec3, // Store tile index, NOT absolute position
 }
 
 #[derive(Bundle)]
@@ -85,7 +85,7 @@ impl DieBundle {
                 animation_state: DieAnimation::None,
                 animation_direction: Direction::Up,
                 animation_timer: AnimationFrameTimer(Timer::from_seconds(MOVEMENT_COOLDOWN/4.0, false)),
-                destination_translation: DIE_STARTING_POSITION,
+                destination_translation: DIE_STARTING_POSITION / GRID_SIZE,
             },
             collider: Collider,
             movement_cooldown: MovementCooldown(Timer::from_seconds(MOVEMENT_COOLDOWN, false)),
@@ -126,7 +126,7 @@ fn move_die(
         mut movement_cooldown,
         mut die,) = die_query.single_mut();
     
-    let dist_to_dest = die.destination_translation - transform.translation;
+    let dist_to_dest = die.destination_translation * GRID_SIZE - transform.translation;
     if die.animation_state != DieAnimation::None {
         die.animation_timer.tick(time.delta());
         if die.animation_timer.finished() {
@@ -144,7 +144,7 @@ fn move_die(
                 DieAnimation::Frame3 => {
                     die.animation_state = DieAnimation::None;
                     die.animation_timer.reset();
-                    transform.translation = die.destination_translation;
+                    transform.translation = die.destination_translation * GRID_SIZE;
                 },
                 DieAnimation::None => die.animation_state = DieAnimation::None,
             }
@@ -179,10 +179,10 @@ fn move_die(
 
         if direction.is_none() { return; }
         let direction = direction.unwrap();
-        let new_position = transform.translation + (translation_from_direction(&direction) * Vec3::splat(super::GRID_SIZE));
+        let new_position = die.destination_translation + translation_from_direction(&direction);
 
         for collider in colliders_query.iter() {
-            if is_colliding(new_position, collider.translation) {
+            if is_colliding(new_position * GRID_SIZE, collider.translation) {
                 return;
             }
         }

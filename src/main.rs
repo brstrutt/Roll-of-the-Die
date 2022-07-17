@@ -12,6 +12,7 @@ mod victory_screen_plugin;
 
 use die_plugin::Die;
 use die_plugin::DIE_STARTING_POSITION;
+use die_plugin::get_die_face_sprite_index;
 
 fn main() {
     // When building for WASM, print panics to the browser console
@@ -76,13 +77,14 @@ fn check_for_victory(
 
 fn reset_game(
     mut pressure_plates_query: Query<&mut PressurePlate>,
-    mut die_query: Query<(&mut Transform, &mut Die)>,
+    mut die_query: Query<(&mut Transform, &mut Die, &mut TextureAtlasSprite)>,
 ) {
     for mut pressure_plate in pressure_plates_query.iter_mut() { pressure_plate.activated = false; }
-    let (mut die_transform, mut die) = die_query.single_mut();
+    let (mut die_transform, mut die, mut sprite) = die_query.single_mut();
 
     die_transform.translation = DIE_STARTING_POSITION;
     die.destination_translation = DIE_STARTING_POSITION;
+    sprite.index = get_die_face_sprite_index(die.face_number);
 }
 
 #[derive(Component)]

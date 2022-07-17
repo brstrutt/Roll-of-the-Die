@@ -6,7 +6,7 @@ use bevy::{
     core::FixedTimestep,
 };
 
-use crate::{Collider, GRID_SIZE, PressurePlate, Spritesheet};
+use crate::{Collider, GRID_SIZE, PressurePlate, Spritesheet, GameState};
 
 use super::direction::{
     *,
@@ -19,8 +19,7 @@ impl Plugin for DiePlugin {
         app
             .add_startup_system_to_stage(StartupStage::PostStartup, setup)
             .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(FixedTimestep::step(super::TIME_STEP as f64))
+                SystemSet::on_update(GameState::Playing)
                     .with_system(move_die)
             );
     }

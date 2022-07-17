@@ -8,6 +8,7 @@ mod world_plugin;
 mod direction;
 mod controls_plugin;
 mod title_screen_plugin;
+mod victory_screen_plugin;
 
 use die_plugin::Die;
 use die_plugin::DIE_STARTING_POSITION;
@@ -27,6 +28,7 @@ fn main() {
         .add_state(GameState::MainMenu)
         .add_startup_system(setup)
         .add_plugin(title_screen_plugin::TitleScreenPlugin)
+        .add_plugin(victory_screen_plugin::VictoryScreenPlugin)
         .add_plugin(world_plugin::WorldPlugin)
         .add_plugin(die_plugin::DiePlugin)
         .add_plugin(controls_plugin::ControlsPlugin)
@@ -35,7 +37,7 @@ fn main() {
                 .with_system(check_for_victory)
         )
         .add_system_set(
-            SystemSet::on_exit(GameState::Playing)
+            SystemSet::on_exit(GameState::Finished)
                 .with_system(reset_game)
         )
         .run();
@@ -68,7 +70,7 @@ fn check_for_victory(
     }
 
     if all_plates_active {
-        let _ = state.overwrite_set(GameState::MainMenu);
+        state.overwrite_set(GameState::Finished);
     }
 }
 
@@ -96,6 +98,7 @@ struct PressurePlate{
 enum GameState {
     MainMenu,
     Playing,
+    Finished,
 }
 
 // Globals

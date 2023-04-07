@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{GameState, direction::keypress_to_direction};
+use crate::{GameState};
 
 pub struct VictoryScreenPlugin;
 

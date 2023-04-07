@@ -158,20 +158,20 @@ fn tick_animation(
 
     let dist_to_dest = die.destination_translation * GRID_SIZE - transform.translation;
 
-    match dist_to_dest.length().abs() {
-        40.0.. => {
+    match dist_to_dest.length().abs().round() as i32 {
+        40.. => {
             die.animation_state = DieAnimation::Frame1;
             sprite.index = get_die_face_sprite_index(die.face_number);
         },
-        28.0..=40.0 => {
+        28..=39 => {
             die.animation_state = DieAnimation::Frame1;
             sprite.index = get_die_animation_frame_index(1, die.animation_direction);
         },
-        16.0..=28.0 => {
+        16..=27 => {
             die.animation_state = DieAnimation::Frame2;
             sprite.index = get_die_animation_frame_index(2, die.animation_direction);
         },
-        4.0..=16.0 => {
+        4..=15 => {
             die.animation_state = DieAnimation::Frame3;
             sprite.index = get_die_animation_frame_index(3, die.animation_direction);
         },

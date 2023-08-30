@@ -15,7 +15,8 @@
 			"settings": {},
 			"extensions": [
 				"rust-lang.rust-analyzer",
-				"dustypomerleau.rust-syntax"
+				"dustypomerleau.rust-syntax",
+				"github.vscode-github-actions"
 			]
 		}
 	},

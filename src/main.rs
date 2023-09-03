@@ -25,26 +25,31 @@ fn main() {
     log::info!("App is starting");
 
     App::new()
-        .add_plugins_with(DefaultPlugins, |group| group.disable::<LogPlugin>())
-        .add_state(GameState::MainMenu)
-        .add_startup_system(setup)
-        .add_plugin(title_screen_plugin::TitleScreenPlugin)
-        .add_plugin(victory_screen_plugin::VictoryScreenPlugin)
-        .add_plugin(world_plugin::WorldPlugin)
-        .add_plugin(die_plugin::DiePlugin)
-        .add_plugin(controls_plugin::ControlsPlugin)
-        .add_system_set(
-            SystemSet::on_update(GameState::Playing)
-                .with_system(check_for_victory)
+        .add_plugins(
+            DefaultPlugins.set(ImagePlugin::default_nearest())
+            .build().disable::<LogPlugin>()
         )
-        .add_system_set(
-            SystemSet::on_exit(GameState::Finished)
-                .with_system(reset_game)
+        .add_state::<GameState>()
+        .add_systems(Startup, setup)
+        .add_plugins((
+            title_screen_plugin::TitleScreenPlugin,
+            victory_screen_plugin::VictoryScreenPlugin,
+            world_plugin::WorldPlugin,
+            die_plugin::DiePlugin,
+            controls_plugin::ControlsPlugin
+        ))
+        .add_systems(
+            Update,
+            check_for_victory.run_if(in_state(GameState::Playing))
+        )
+        .add_systems(
+            Update,
+            reset_game.run_if(in_state(GameState::Finished))
         )
         .run();
 }
 
-#[derive(Component)]
+#[derive(Component, Resource)]
 struct Spritesheet(Handle<TextureAtlas>);
 
 fn setup(
@@ -52,18 +57,23 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     let texture_handle = asset_server.load("resources/spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::splat(GRID_PIXEL_COUNT), 7, 10);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle, 
+        Vec2::splat(GRID_PIXEL_COUNT), 
+        7, 
+        10, 
+        None, 
+        None);
     commands.insert_resource(Spritesheet(texture_atlases.add(texture_atlas)));
 }
 
 
 fn check_for_victory(
     pressure_plates_query: Query<& PressurePlate>,
-    mut state: ResMut<State<GameState>>,
+    mut state: ResMut<NextState<GameState>>,
 ) {
     let mut all_plates_active = true;
     for pressure_plate in pressure_plates_query.iter() {
@@ -71,7 +81,7 @@ fn check_for_victory(
     }
 
     if all_plates_active {
-        let _ = state.overwrite_set(GameState::Finished);
+        state.set(GameState::Finished);
     }
 }
 
@@ -96,8 +106,9 @@ struct PressurePlate{
     number: usize,
 }
 
-#[derive(Hash, Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Hash, Debug, PartialEq, Eq, Clone, Copy, Default, States)]
 enum GameState {
+    #[default]
     MainMenu,
     Playing,
     Finished,

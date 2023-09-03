@@ -7,9 +7,9 @@ pub struct ControlsPlugin;
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system_to_stage(StartupStage::PostStartup, setup)
-            .add_system(show_which_keys_are_pressed)
-            .add_system(show_which_die_faces_are_adjacent);
+            .add_systems(PostStartup, setup)
+            .add_systems(Update, show_which_keys_are_pressed)
+            .add_systems(Update, show_which_die_faces_are_adjacent);
     }
 }
 
@@ -34,39 +34,41 @@ fn setup(
             if direction.is_some() {
                 let direction = direction.unwrap();
                 commands
-                    .spawn()
-                    .insert(ControlsDisplay(direction))
-                    .insert_bundle(SpriteSheetBundle{
+                    .spawn((
+                        ControlsDisplay(direction),
+                        SpriteSheetBundle{
+                            texture_atlas: spritesheet.0.clone(),
+                            transform: Transform {
+                                translation: display_centre + get_direction_key_display_offset(Some(direction)) * GRID_SIZE * 2.0,
+                                scale: Vec3::splat(super::PIXEL_SCALE),
+                                ..default()
+                            },
+                            sprite: TextureAtlasSprite {
+                                index: get_direction_key_sprite_index(direction),
+                                ..default()
+                            },
+                            ..default()
+                        }
+                    ));
+            }
+
+            commands
+                .spawn((
+                    AdjacentFacesDisplay(direction),
+                    SpriteSheetBundle{
                         texture_atlas: spritesheet.0.clone(),
                         transform: Transform {
-                            translation: display_centre + get_direction_key_display_offset(Some(direction)) * GRID_SIZE * 2.0,
+                            translation: display_centre + get_direction_key_display_offset(direction) * GRID_SIZE,
                             scale: Vec3::splat(super::PIXEL_SCALE),
                             ..default()
                         },
                         sprite: TextureAtlasSprite {
-                            index: get_direction_key_sprite_index(direction),
+                            index: 0,
                             ..default()
                         },
                         ..default()
-                    });
-            }
-
-            commands
-                .spawn()
-                .insert(AdjacentFacesDisplay(direction))
-                .insert_bundle(SpriteSheetBundle{
-                    texture_atlas: spritesheet.0.clone(),
-                    transform: Transform {
-                        translation: display_centre + get_direction_key_display_offset(direction) * GRID_SIZE,
-                        scale: Vec3::splat(super::PIXEL_SCALE),
-                        ..default()
-                    },
-                    sprite: TextureAtlasSprite {
-                        index: 0,
-                        ..default()
-                    },
-                    ..default()
-                });
+                    }
+                ));
     }
     
 }

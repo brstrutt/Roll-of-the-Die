@@ -60,7 +60,7 @@ fn setup(
             ..default()
         })
         .insert(VictoryUi)
-        .insert(VictoryTimer(Timer::from_seconds(5.0, TimerMode::Repeating)));
+        .insert(VictoryTimer(Timer::from_seconds(5.0, TimerMode::Once)));
 }
 
 fn show(
@@ -88,7 +88,7 @@ fn update(
     let mut timer = query.single_mut();
     timer.0.tick(time.delta());
 
-    if timer.0.finished() {
+    if timer.0.percent_left() < 0.001 {
         state.set(GameState::MainMenu);
     }
 }

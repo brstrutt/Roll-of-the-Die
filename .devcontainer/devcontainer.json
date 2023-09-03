@@ -25,7 +25,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "apt update && apt install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev && cargo install trunk && rustup target add wasm32-unknown-unknown"
+	"postCreateCommand": "sudo apt update && sudo apt install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev && cargo install trunk && rustup target add wasm32-unknown-unknown"
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"

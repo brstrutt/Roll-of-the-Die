@@ -1,40 +1,40 @@
 use std::ops::Sub;
 
-use bevy::{
-    prelude::*,
-    math::const_vec3,
-};
+use bevy::prelude::*;
 
 use crate::{Collider, GRID_SIZE, PressurePlate, Spritesheet, GameState, PIXEL_SCALE};
 
 use super::direction::{
     *,
-    Direction};
+    Direction
+};
 
 pub struct DiePlugin;
 
 impl Plugin for DiePlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system_to_stage(StartupStage::PostStartup, setup)
-            .add_system_set(
-                SystemSet::on_update(GameState::Playing)
-                    .with_system(react_to_input)
-                    .with_system(tick_animation)
-                    .with_system(tick_motion)
-                    .with_system(new_check_pressure_plates)
+            .add_systems(PostStartup, setup)
+            .add_systems(
+                Update,
+                (
+                    react_to_input,
+                    tick_animation,
+                    tick_motion,
+                    new_check_pressure_plates
+                ).run_if(in_state(GameState::Playing))
             );
     }
 }
 
-pub const DIE_STARTING_POSITION: Vec3 = const_vec3!([0.0, 0.0, 1.0]);
+pub const DIE_STARTING_POSITION: Vec3 = Vec3::from_array([0.0, 0.0, 1.0]);
 const DIE_SPEED: f32 = PIXEL_SCALE * GRID_SIZE * 2.0; // SMaller is faster. Dunno why
 
 fn setup(
     mut commands: Commands,
     spritesheet: Res<Spritesheet>,
 ) {
-    commands.spawn_bundle(DieBundle::new(&spritesheet.0));
+    commands.spawn(DieBundle::new(&spritesheet.0));
 }
 
 #[derive(PartialEq)]
@@ -62,7 +62,6 @@ pub struct Die {
 struct DieBundle {
     die: Die,
     collider: Collider,
-    #[bundle]
     sprite_bundle: SpriteSheetBundle,
 }
 

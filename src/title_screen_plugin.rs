@@ -6,18 +6,18 @@ pub struct TitleScreenPlugin;
 impl Plugin for TitleScreenPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system(setup)
-            .add_system_set(
-                SystemSet::on_enter(GameState::MainMenu)
-                    .with_system(show_main_menu),
+            .add_systems(Startup, setup)
+            .add_systems(
+                OnEnter(GameState::MainMenu), 
+                show_main_menu
             )
-            .add_system_set(
-                SystemSet::on_update(GameState::MainMenu)
-                    .with_system(update_main_menu)
+            .add_systems(
+                Update, 
+                update_main_menu.run_if(in_state(GameState::MainMenu))
             )
-            .add_system_set(
-                SystemSet::on_exit(GameState::MainMenu)
-                    .with_system(hide_main_menu),
+            .add_systems(
+                OnExit(GameState::MainMenu), 
+                hide_main_menu
             );
     }
 }
@@ -29,19 +29,16 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
-                position: Rect {
-                    bottom: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                },
+                bottom: Val::Px(5.0),
+                right: Val::Px(15.0),
                 ..default()
             },
             // Use the `Text::with_section` constructor
-            text: Text::with_section(
+            text: Text::from_section(
                 // Accepts a `String` or any type that converts into a `String`, such as `&str`
                 "Roll the Die!",
                 TextStyle {
@@ -49,13 +46,8 @@ fn setup(
                     font_size: 100.0,
                     color: Color::WHITE,
                 },
-                // Note: You can use `Default::default()` in place of the `TextAlignment`
-                TextAlignment {
-                    horizontal: HorizontalAlign::Center,
-                    ..default()
-                },
-            ),
-            visibility: Visibility{ is_visible: false },
+            ).with_alignment(TextAlignment::Center),
+            visibility: Visibility::Hidden,
             ..default()
         })
         .insert(MenuUi);
@@ -67,18 +59,18 @@ fn show_main_menu(
         With<MenuUi>>,
 ) {
     for mut visibility in query.iter_mut() {
-        visibility.is_visible = true;
+        *visibility = Visibility::Visible;
     }
 }
 
 fn update_main_menu(
     keyboard_input: Res<Input<KeyCode>>,
-    mut state: ResMut<State<GameState>>,
+    mut state: ResMut<NextState<GameState>>,
 ) {
     let direction = keypress_to_direction(keyboard_input);
 
     if direction.is_some() {
-        let _ = state.overwrite_set(GameState::Playing);
+        state.set(GameState::Playing);
     }
 }
 
@@ -88,6 +80,6 @@ fn hide_main_menu(
         With<MenuUi>>,
 ) {
     for mut visibility in query.iter_mut() {
-        visibility.is_visible = false;
+        *visibility = Visibility::Hidden;
     }
 }

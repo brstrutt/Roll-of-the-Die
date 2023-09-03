@@ -7,8 +7,8 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system_to_stage(StartupStage::PostStartup, setup)
-            .add_system(update_pressure_plate_appearence);
+            .add_systems(PostStartup, setup)
+            .add_systems(Update, update_pressure_plate_appearence);
     }
 }
 
@@ -42,44 +42,21 @@ fn setup(
             
             match tile_type {
                 TileType::Floor => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle),
+                    .spawn((Tile, sprite_sheet_bundle)),
                 TileType::PressurePlate1 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 1}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 1})),
                 TileType::PressurePlate2 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 2}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 2})),
                 TileType::PressurePlate3 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 3}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 3})),
                 TileType::PressurePlate4 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 4}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 4})),
                 TileType::PressurePlate5 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 5}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 5})),
                 TileType::PressurePlate6 => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(PressurePlate{ activated: false, number: 6}),
+                    .spawn((Tile, sprite_sheet_bundle, PressurePlate{ activated: false, number: 6})),
                 TileType::Wall => commands
-                    .spawn()
-                    .insert(Tile)
-                    .insert_bundle(sprite_sheet_bundle)
-                    .insert(Collider),
+                    .spawn((Tile, sprite_sheet_bundle, Collider)),
             };
         }
     }

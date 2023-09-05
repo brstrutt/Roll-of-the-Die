@@ -204,6 +204,10 @@ fn tick_motion(
 
 
 fn is_colliding(object1_pos: Vec3, object2_pos: Vec3) -> bool {
+    // Scrap the depth component. We don't need it. Also for some reason the die ends up at a different depth on replay.
+    let object1_pos = object1_pos.truncate();
+    let object2_pos = object2_pos.truncate();
+
     let difference = object1_pos.sub(object2_pos);
     return difference.length().abs() < GRID_SIZE / 2.0; // Just do sphere collision detection because everything is squares
 }

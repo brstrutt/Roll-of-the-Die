@@ -16,7 +16,7 @@ impl Plugin for DiePlugin {
         app
             .add_systems(PostStartup, setup)
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     react_to_input,
                     tick_animation,

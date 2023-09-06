@@ -8,8 +8,8 @@ impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(PostStartup, setup)
-            .add_systems(Update, show_which_keys_are_pressed)
-            .add_systems(Update, show_which_die_faces_are_adjacent);
+            .add_systems(FixedUpdate, show_which_keys_are_pressed)
+            .add_systems(FixedUpdate, show_which_die_faces_are_adjacent);
     }
 }
 

@@ -46,6 +46,7 @@ fn main() {
             Update,
             reset_game.run_if(in_state(GameState::Finished))
         )
+        .insert_resource(FixedTime::new_from_secs(0.03))
         .run();
 }
 
